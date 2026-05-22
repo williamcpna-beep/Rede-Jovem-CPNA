@@ -24,51 +24,16 @@ jobs:
             rm rede-jovem-saas.zip
           fi
 
-      - name: Create tsconfig.json
+      - name: Create tsconfig files
         working-directory: frontend
         run: |
-          cat > tsconfig.json << 'EOF'
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "strict": false,
-    "baseUrl": ".",
-    "paths": { "@/*": ["./src/*"] }
-  },
-  "include": ["src"]
-}
-EOF
-          cat > tsconfig.node.json << 'EOF2'
-{
-  "compilerOptions": {
-    "composite": true,
-    "skipLibCheck": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true
-  },
-  "include": ["vite.config.ts"]
-}
-EOF2
+          echo '{"compilerOptions":{"target":"ES2020","useDefineForClassFields":true,"lib":["ES2020","DOM","DOM.Iterable"],"module":"ESNext","skipLibCheck":true,"moduleResolution":"bundler","allowImportingTsExtensions":true,"resolveJsonModule":true,"isolatedModules":true,"noEmit":true,"jsx":"react-jsx","strict":false,"baseUrl":".","paths":{"@/*":["./src/*"]}},"include":["src"]}' > tsconfig.json
+          echo '{"compilerOptions":{"composite":true,"skipLibCheck":true,"module":"ESNext","moduleResolution":"bundler","allowSyntheticDefaultImports":true},"include":["vite.config.ts"]}' > tsconfig.node.json
 
-      - name: Fix vite.config for GitHub Pages
-        run: |
-          sed -i "s/defineConfig({/defineConfig({\n  base: '\/Rede-Jovem-CPNA\/',/" frontend/vite.config.ts
-
-      - name: Fix asset paths for GitHub Pages
+      - name: Fix logo and favicon paths
         run: |
           sed -i 's|src="/logo-rede-jovem.png"|src="/Rede-Jovem-CPNA/logo-rede-jovem.png"|g' frontend/src/components/layout/AppLayout.tsx
-          sed -i 's|href="/favicon.png"|href="/Rede-Jovem-CPNA/favicon.png"|g' frontend/index.html
+          sed -i 's|href="/favicon.png"|href="./favicon.png"|g' frontend/index.html
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -83,9 +48,9 @@ EOF2
         working-directory: frontend
         run: cp .env.example .env 2>/dev/null || true
 
-      - name: Build
+      - name: Build with GitHub Pages base path
         working-directory: frontend
-        run: npx vite build
+        run: npx vite build --base=/Rede-Jovem-CPNA/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
