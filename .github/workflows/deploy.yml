@@ -26,31 +26,17 @@ jobs:
 
       - name: Fix vite.config for GitHub Pages
         run: |
-          cat > frontend/vite.config.ts << 'VEOF'
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
-
-export default defineConfig({
-  base: '/Rede-Jovem-CPNA/',
-  plugins: [react()],
-  resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
-  },
-})
-VEOF
+          sed -i "s/defineConfig({/defineConfig({\n  base: '\/Rede-Jovem-CPNA\/',/" frontend/vite.config.ts
 
       - name: Fix asset paths for GitHub Pages
         run: |
-          sed -i 's|src="/logo-rede-jovem.png"|src="/Rede-Jovem-CPNA/logo-rede-jovem.png"|g' frontend/src/components/layout/AppLayout.tsx
-          sed -i 's|href="/favicon.png"|href="/Rede-Jovem-CPNA/favicon.png"|g' frontend/index.html
+          sed -i "s|src=\"/logo-rede-jovem.png\"|src=\"/Rede-Jovem-CPNA/logo-rede-jovem.png\"|g" frontend/src/components/layout/AppLayout.tsx
+          sed -i "s|href=\"/favicon.png\"|href=\"/Rede-Jovem-CPNA/favicon.png\"|g" frontend/index.html
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         working-directory: frontend
