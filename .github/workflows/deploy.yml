@@ -24,6 +24,19 @@ jobs:
             rm rede-jovem-saas.zip
           fi
 
+      - name: Debug router structure
+        run: |
+          echo "=== All TSX/TS files ==="
+          find frontend/src -name "*.tsx" -o -name "*.ts" | sort
+          echo "=== App.tsx ==="
+          cat frontend/src/App.tsx 2>/dev/null || echo "Not found"
+          echo "=== main.tsx ==="
+          cat frontend/src/main.tsx 2>/dev/null || echo "Not found"
+          echo "=== Files with Router/navigate ==="
+          grep -rl "BrowserRouter\|createBrowserRouter\|RouterProvider\|HashRouter" frontend/src/ 2>/dev/null | head -10
+          echo "=== Router file contents ==="
+          grep -rl "BrowserRouter\|createBrowserRouter\|RouterProvider\|HashRouter" frontend/src/ 2>/dev/null | xargs -r head -80
+
       - name: Create tsconfig files
         working-directory: frontend
         run: |
