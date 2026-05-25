@@ -1,15 +1,12 @@
 name: Build and Deploy to GitHub Pages
-
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: write
   pages: write
   id-token: write
-
 jobs:
   extract-and-deploy:
     runs-on: ubuntu-latest
@@ -24,31 +21,64 @@ jobs:
             rm rede-jovem-saas.zip
           fi
 
-      - name: Debug router structure
+      - name: Debug router targeted
         run: |
-          echo "=== All TSX/TS files ==="
-          find frontend/src -name "*.tsx" -o -name "*.ts" | sort
-          echo "=== App.tsx ==="
-          cat frontend/src/App.tsx 2>/dev/null || echo "Not found"
-          echo "=== main.tsx ==="
-          cat frontend/src/main.tsx 2>/dev/null || echo "Not found"
-          echo "=== Files with Router/navigate ==="
-          grep -rl "BrowserRouter\|createBrowserRouter\|RouterProvider\|HashRouter" frontend/src/ 2>/dev/null | head -10
-          echo "=== Router file contents ==="
-          grep -rl "BrowserRouter\|createBrowserRouter\|RouterProvider\|HashRouter" frontend/src/ 2>/dev/null | xargs -r head -80
+          echo "PKG_ROUTER:"
+          grep -i router frontend/package.json | head -5 || true
+          echo "FILES:"
+          find frontend/src -name "*.tsx" -o -name "*.ts" | sort | head -30
+          echo "APP_TSX:"
+          head -50 frontend/src/App.tsx 2>/dev/null || echo NA
+          echo "MAIN_TSX:"
+          head -30 frontend/src/main.tsx 2>/dev/null || echo NA
+          echo "ROUTER_GREP:"
+          grep -rn "Router" frontend/src/ 2>/dev/null | head -15 || true
 
       - name: Create tsconfig files
         working-directory: frontend
         run: |
-          echo '{"compilerOptions":{"target":"ES2020","useDefineForClassFields":true,"lib":["ES2020","DOM","DOM.Iterable"],"module":"ESNext","skipLibCheck":true,"moduleResolution":"bundler","allowImportingTsExtensions":true,"resolveJsonModule":true,"isolatedModules":true,"noEmit":true,"jsx":"react-jsx","strict":false,"baseUrl":".","paths":{"@/*":["./src/*"]}},"include":["src"]}' > tsconfig.json
-          echo '{"compilerOptions":{"composite":true,"skipLibCheck":true,"module":"ESNext","moduleResolution":"bundler","allowSyntheticDefaultImports":true},"include":["vite.config.ts"]}' > tsconfig.node.json
+          cat > tsconfig.json << 'EOF'
+          {
+            "compilerOptions": {
+              "target": "ES2020",
+              "useDefineForClassFields": true,
+              "lib": ["ES2020", "DOM", "DOM.Iterable"],
+              "module": "ESNext",
+              "skipLibCheck": true,
+              "moduleResolution": "bundler",
+              "allowImportingTsExtensions": true,
+              "resolveJsonModule": true,
+              "isolatedModules": true,
+              "noEmit": true,
+              "jsx": "react-jsx",
+              "strict": true,
+              "noUnusedLocals": false,
+              "noUnusedParameters": false,
+              "noFallthroughCasesInSwitch": true
+            },
+            "include": ["src"],
+            "references": [{ "path": "./tsconfig.node.json" }]
+          }
+          EOF
+          cat > tsconfig.node.json << 'EOF'
+          {
+            "compilerOptions": {
+              "composite": true,
+              "skipLibCheck": true,
+              "module": "ESNext",
+              "moduleResolution": "bundler",
+              "allowSyntheticDefaultImports": true
+            },
+            "include": ["vite.config.ts"]
+          }
+          EOF
 
       - name: Fix asset paths and React Router basename
         run: |
-          sed -i 's|src="/logo-rede-jovem.png"|src="/Rede-Jovem-CPNA/logo-rede-jovem.png"|g' frontend/src/components/layout/AppLayout.tsx
-          sed -i 's|href="/favicon.png"|href="./favicon.png"|g' frontend/index.html
-          grep -rl "BrowserRouter" frontend/src/ 2>/dev/null | xargs -r sed -i 's|<BrowserRouter>|<BrowserRouter basename="/Rede-Jovem-CPNA">|g'
-          grep -rl "createBrowserRouter" frontend/src/ 2>/dev/null | xargs -r sed -E -i 's|createBrowserRouter\(([a-zA-Z_][a-zA-Z0-9_]*)\)|createBrowserRouter(\1, { basename: "/Rede-Jovem-CPNA" })|g'
+          sed -i 's|src="/logo-rede-jovem.png"|src="/Rede-Jovem-CPNA/logo-rede-jovem.png"|g' frontend/src/components/layout/AppLayout.tsx || true
+          sed -i 's|href="/favicon.png"|href="./favicon.png"|g' frontend/index.html || true
+          grep -rl "BrowserRouter" frontend/src/ 2>/dev/null | xargs -r sed -i 's|<BrowserRouter>|<BrowserRouter basename="/Rede-Jovem-CPNA">|g' || true
+          grep -rl "createBrowserRouter" frontend/src/ 2>/dev/null | xargs -r sed -E -i 's|createBrowserRouter\(([a-zA-Z_][a-zA-Z0-9_]*)\)|createBrowserRouter(\1, { basename: "/Rede-Jovem-CPNA" })|g' || true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -59,11 +89,7 @@ jobs:
         working-directory: frontend
         run: npm install
 
-      - name: Create env file
-        working-directory: frontend
-        run: cp .env.example .env 2>/dev/null || true
-
-      - name: Build with GitHub Pages base path
+      - name: Build
         working-directory: frontend
         run: npx vite build --base=/Rede-Jovem-CPNA/
 
