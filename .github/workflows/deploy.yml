@@ -4,7 +4,7 @@ on:
     branches: [main]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: write 
   pages: write
   id-token: write
 jobs:
@@ -13,86 +13,56 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Extract project ZIP
         run: |
           if [ -f rede-jovem-saas.zip ]; then
             unzip -o rede-jovem-saas.zip
             rm rede-jovem-saas.zip
           fi
-
-      - name: Debug firebase config structure
-        run: |
-          echo "=== firebase.ts ==="
-          cat frontend/src/services/firebase.ts 2>/dev/null || echo "NOT FOUND"
-          echo "=== .env files ==="
-          find frontend -name ".env*" | head -10 || echo "none"
-          echo "=== vite.config.ts ==="
-          cat frontend/vite.config.ts 2>/dev/null || echo "NOT FOUND"
-
       - name: Create tsconfig files
         working-directory: frontend
         run: |
           cat > tsconfig.json << 'EOF'
-          {
-            "compilerOptions": {
-              "target": "ES2020",
-              "useDefineForClassFields": true,
-              "lib": ["ES2020", "DOM", "DOM.Iterable"],
-              "module": "ESNext",
-              "skipLibCheck": true,
-              "moduleResolution": "bundler",
-              "allowImportingTsExtensions": true,
-              "resolveJsonModule": true,
-              "isolatedModules": true,
-              "noEmit": true,
-              "jsx": "react-jsx",
-              "strict": true,
-              "noUnusedLocals": false,
-              "noUnusedParameters": false,
-              "noFallthroughCasesInSwitch": true
-            },
-            "include": ["src"],
-            "references": [{ "path": "./tsconfig.node.json" }]
-          }
+          { "compilerOptions": { "target": "ES2020", "useDefineForClassFields": true,
+            "lib": ["ES2020","DOM","DOM.Iterable"], "module": "ESNext",
+            "skipLibCheck": true, "moduleResolution": "bundler",
+            "allowImportingTsExtensions": true, "resolveJsonModule": true,
+            "isolatedModules": true, "noEmit": true, "jsx": "react-jsx",
+            "strict": true, "noUnusedLocals": false, "noUnusedParameters": false,
+            "noFallthroughCasesInSwitch": true },
+            "include": ["src"], "references": [{"path": "./tsconfig.node.json"}] }
           EOF
           cat > tsconfig.node.json << 'EOF'
-          {
-            "compilerOptions": {
-              "composite": true,
-              "skipLibCheck": true,
-              "module": "ESNext",
-              "moduleResolution": "bundler",
-              "allowSyntheticDefaultImports": true
-            },
-            "include": ["vite.config.ts"]
-          }
+          { "compilerOptions": { "composite": true, "skipLibCheck": true,
+            "module": "ESNext", "moduleResolution": "bundler",
+            "allowSyntheticDefaultImports": true }, "include": ["vite.config.ts"] }
           EOF
-
       - name: Fix React Router basename
         run: |
           sed -i 's|src="/logo-rede-jovem.png"|src="/Rede-Jovem-CPNA/logo-rede-jovem.png"|g' frontend/src/components/layout/AppLayout.tsx || true
           sed -i 's|href="/favicon.png"|href="./favicon.png"|g' frontend/index.html || true
           grep -rl "BrowserRouter" frontend/src/ 2>/dev/null | xargs -r sed -i 's|<BrowserRouter>|<BrowserRouter basename="/Rede-Jovem-CPNA">|g' || true
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Install dependencies
         working-directory: frontend
         run: npm install
-
       - name: Build
         working-directory: frontend
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
         run: npx vite build --base=/Rede-Jovem-CPNA/
-
       - name: Add 404.html for SPA routing
         run: cp frontend/dist/index.html frontend/dist/404.html
-
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./frontend/dist
+          publish_dir: ./frontend/dis
