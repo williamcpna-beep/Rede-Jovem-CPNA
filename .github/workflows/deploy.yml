@@ -21,18 +21,14 @@ jobs:
             rm rede-jovem-saas.zip
           fi
 
-      - name: Debug router targeted
+      - name: Debug firebase config structure
         run: |
-          echo "PKG_ROUTER:"
-          grep -i router frontend/package.json | head -5 || true
-          echo "FILES:"
-          find frontend/src -name "*.tsx" -o -name "*.ts" | sort | head -30
-          echo "APP_TSX:"
-          head -50 frontend/src/App.tsx 2>/dev/null || echo NA
-          echo "MAIN_TSX:"
-          head -30 frontend/src/main.tsx 2>/dev/null || echo NA
-          echo "ROUTER_GREP:"
-          grep -rn "Router" frontend/src/ 2>/dev/null | head -15 || true
+          echo "=== firebase.ts ==="
+          cat frontend/src/services/firebase.ts 2>/dev/null || echo "NOT FOUND"
+          echo "=== .env files ==="
+          find frontend -name ".env*" | head -10 || echo "none"
+          echo "=== vite.config.ts ==="
+          cat frontend/vite.config.ts 2>/dev/null || echo "NOT FOUND"
 
       - name: Create tsconfig files
         working-directory: frontend
@@ -73,12 +69,11 @@ jobs:
           }
           EOF
 
-      - name: Fix asset paths and React Router basename
+      - name: Fix React Router basename
         run: |
           sed -i 's|src="/logo-rede-jovem.png"|src="/Rede-Jovem-CPNA/logo-rede-jovem.png"|g' frontend/src/components/layout/AppLayout.tsx || true
           sed -i 's|href="/favicon.png"|href="./favicon.png"|g' frontend/index.html || true
           grep -rl "BrowserRouter" frontend/src/ 2>/dev/null | xargs -r sed -i 's|<BrowserRouter>|<BrowserRouter basename="/Rede-Jovem-CPNA">|g' || true
-          grep -rl "createBrowserRouter" frontend/src/ 2>/dev/null | xargs -r sed -E -i 's|createBrowserRouter\(([a-zA-Z_][a-zA-Z0-9_]*)\)|createBrowserRouter(\1, { basename: "/Rede-Jovem-CPNA" })|g' || true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
